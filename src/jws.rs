@@ -1,7 +1,5 @@
 use crate::error::Error;
 use crate::jwk::{Algorithm, Base64urlUInt, Params as JWKParams, JWK};
-#[cfg(any(feature = "k256", feature = "p256"))]
-use crate::passthrough_digest::PassthroughDigest;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::convert::TryFrom;
@@ -138,100 +136,112 @@ pub fn sign_bytes(algorithm: Algorithm, data: &[u8], key: &JWK) -> Result<Vec<u8
             }
         }
         #[allow(unused)]
-        JWKParams::EC(ec) => match algorithm {
-            #[cfg(feature = "p256")]
-            Algorithm::ES256 => {
-                use p256::ecdsa::signature::{Signature, Signer};
-                let curve = ec.curve.as_ref().ok_or(Error::MissingCurve)?;
-                if curve != "P-256" {
-                    return Err(Error::CurveNotImplemented(curve.to_string()));
+        JWKParams::EC(ec) => {
+            match algorithm {
+                #[cfg(feature = "p256")]
+                Algorithm::ES256 => {
+                    use p256::ecdsa::signature::{Signature, Signer};
+                    let curve = ec.curve.as_ref().ok_or(Error::MissingCurve)?;
+                    if curve != "P-256" {
+                        return Err(Error::CurveNotImplemented(curve.to_string()));
+                    }
+                    let secret_key = p256::SecretKey::try_from(ec)?;
+                    let signing_key = p256::ecdsa::SigningKey::from(secret_key);
+                    let sig: p256::ecdsa::Signature = signing_key.try_sign(data)?;
+                    sig.as_bytes().to_vec()
                 }
-                let secret_key = p256::SecretKey::try_from(ec)?;
-                let signing_key = p256::ecdsa::SigningKey::from(secret_key);
-                let sig: p256::ecdsa::Signature = signing_key.try_sign(data)?;
-                sig.as_bytes().to_vec()
-            }
-            #[cfg(feature = "k256")]
-            Algorithm::ES256K => {
-                use k256::ecdsa::signature::{Signature, Signer};
-                let curve = ec.curve.as_ref().ok_or(Error::MissingCurve)?;
-                if curve != "secp256k1" {
-                    return Err(Error::CurveNotImplemented(curve.to_string()));
+                #[cfg(feature = "k256")]
+                Algorithm::ES256K => {
+                    use k256::ecdsa::signature::{Signature, Signer};
+                    let curve = ec.curve.as_ref().ok_or(Error::MissingCurve)?;
+                    if curve != "secp256k1" {
+                        return Err(Error::CurveNotImplemented(curve.to_string()));
+                    }
+                    let secret_key = k256::SecretKey::try_from(ec)?;
+                    let signing_key = k256::ecdsa::SigningKey::from(secret_key);
+                    let sig: k256::ecdsa::Signature = signing_key.try_sign(data)?;
+                    sig.as_bytes().to_vec()
                 }
-                let secret_key = k256::SecretKey::try_from(ec)?;
-                let signing_key = k256::ecdsa::SigningKey::from(secret_key);
-                let sig: k256::ecdsa::Signature = signing_key.try_sign(data)?;
-                sig.as_bytes().to_vec()
-            }
-            #[cfg(feature = "k256")]
-            Algorithm::ES256KR => {
-                use k256::ecdsa::signature::{digest::Digest, DigestSigner, Signature, Signer};
-                let curve = ec.curve.as_ref().ok_or(Error::MissingCurve)?;
-                if curve != "secp256k1" {
-                    return Err(Error::CurveNotImplemented(curve.to_string()));
+                #[cfg(feature = "k256")]
+                Algorithm::ES256KR => {
+                    use k256::ecdsa::signature::{digest::Digest, DigestSigner, Signature, Signer};
+                    // use sha2::Sha256;
+                    let curve = ec.curve.as_ref().ok_or(Error::MissingCurve)?;
+                    if curve != "secp256k1" {
+                        return Err(Error::CurveNotImplemented(curve.to_string()));
+                    }
+                    let secret_key = k256::SecretKey::try_from(ec)?;
+                    let signing_key = k256::ecdsa::SigningKey::from(secret_key);
+                    // let digest = Sha256VarCore::new(32);
+                    // let hash = crate::hash::sha256(&data)?;
+                    // let digest = Digest::chain(<PassthroughDigest as Digest>::new(), &hash);
+                    // let digest = Digest::chain(Sha256, &data);
+                    let sig: k256::ecdsa::recoverable::Signature = signing_key.try_sign(&data)?;
+                    sig.as_bytes().to_vec()
                 }
-                let secret_key = k256::SecretKey::try_from(ec)?;
-                let signing_key = k256::ecdsa::SigningKey::from(secret_key);
-                let hash = crate::hash::sha256(&data)?;
-                let digest = Digest::chain(<PassthroughDigest as Digest>::new(), &hash);
-                let sig: k256::ecdsa::recoverable::Signature =
-                    signing_key.try_sign_digest(digest)?;
-                sig.as_bytes().to_vec()
-            }
-            #[cfg(feature = "k256")]
-            Algorithm::ESKeccakKR => {
-                use k256::ecdsa::signature::{Signature, Signer};
-                let curve = ec.curve.as_ref().ok_or(Error::MissingCurve)?;
-                if curve != "secp256k1" {
-                    return Err(Error::CurveNotImplemented(curve.to_string()));
+                #[cfg(feature = "k256")]
+                Algorithm::ESKeccakKR => {
+                    use k256::ecdsa::signature::{Signature, Signer};
+                    let curve = ec.curve.as_ref().ok_or(Error::MissingCurve)?;
+                    if curve != "secp256k1" {
+                        return Err(Error::CurveNotImplemented(curve.to_string()));
+                    }
+                    let secret_key = k256::SecretKey::try_from(ec)?;
+                    let signing_key = k256::ecdsa::SigningKey::from(secret_key);
+                    let sig: k256::ecdsa::recoverable::Signature = signing_key.try_sign(data)?;
+                    sig.as_bytes().to_vec()
                 }
-                let secret_key = k256::SecretKey::try_from(ec)?;
-                let signing_key = k256::ecdsa::SigningKey::from(secret_key);
-                let sig: k256::ecdsa::recoverable::Signature = signing_key.try_sign(data)?;
-                sig.as_bytes().to_vec()
-            }
-            #[cfg(feature = "p256")]
-            Algorithm::ESBlake2b => {
-                // We will be able to use the blake2 crate directly once it allow 32B output
-                let hash = blake2b_simd::Params::new()
-                    .hash_length(32)
-                    .hash(data)
-                    .as_bytes()
-                    .to_vec();
-                use p256::ecdsa::signature::{digest::Digest, DigestSigner, Signature};
-                let curve = ec.curve.as_ref().ok_or(Error::MissingCurve)?;
-                if curve != "P-256" {
-                    return Err(Error::CurveNotImplemented(curve.to_string()));
+                #[cfg(feature = "p256")]
+                Algorithm::ESBlake2b => {
+                    // We will be able to use the blake2 crate directly once it allow 32B output
+                    // let hash = blake2b_simd::Params::new()
+                    //     .hash_length(32)
+                    //     .hash(data)
+                    //     .as_bytes()
+                    //     .to_vec();
+                    use p256::ecdsa::signature::{
+                        digest::{consts::U4, Digest},
+                        DigestSigner, Signature,
+                    };
+                    let curve = ec.curve.as_ref().ok_or(Error::MissingCurve)?;
+                    if curve != "P-256" {
+                        return Err(Error::CurveNotImplemented(curve.to_string()));
+                    }
+                    let secret_key = p256::SecretKey::try_from(ec)?;
+                    let signing_key = p256::ecdsa::SigningKey::from(secret_key);
+                    let sig: p256::ecdsa::Signature = signing_key.try_sign_digest(
+                        Digest::chain(<blake2::Blake2b<U4> as Digest>::new(), data),
+                    )?;
+                    sig.as_bytes().to_vec()
                 }
-                let secret_key = p256::SecretKey::try_from(ec)?;
-                let signing_key = p256::ecdsa::SigningKey::from(secret_key);
-                let sig: p256::ecdsa::Signature = signing_key
-                    .try_sign_digest(Digest::chain(<PassthroughDigest as Digest>::new(), &hash))?;
-                sig.as_bytes().to_vec()
-            }
-            #[cfg(feature = "k256")]
-            Algorithm::ESBlake2bK => {
-                // We will be able to use the blake2 crate directly once it allow 32B output
-                let hash = blake2b_simd::Params::new()
-                    .hash_length(32)
-                    .hash(data)
-                    .as_bytes()
-                    .to_vec();
-                use k256::ecdsa::signature::{digest::Digest, DigestSigner, Signature};
-                let curve = ec.curve.as_ref().ok_or(Error::MissingCurve)?;
-                if curve != "secp256k1" {
-                    return Err(Error::CurveNotImplemented(curve.to_string()));
+                #[cfg(feature = "k256")]
+                Algorithm::ESBlake2bK => {
+                    // We will be able to use the blake2 crate directly once it allow 32B output
+                    // let hash = blake2b_simd::Params::new()
+                    //     .hash_length(32)
+                    //     .hash(data)
+                    //     .as_bytes()
+                    //     .to_vec();
+                    use k256::ecdsa::signature::{
+                        digest::{consts::U4, Digest},
+                        DigestSigner, Signature,
+                    };
+                    let curve = ec.curve.as_ref().ok_or(Error::MissingCurve)?;
+                    if curve != "secp256k1" {
+                        return Err(Error::CurveNotImplemented(curve.to_string()));
+                    }
+                    let secret_key = k256::SecretKey::try_from(ec)?;
+                    let signing_key = k256::ecdsa::SigningKey::from(secret_key);
+                    let sig: k256::ecdsa::Signature = signing_key.try_sign_digest(
+                        Digest::chain(<blake2::Blake2b<U4> as Digest>::new(), data),
+                    )?;
+                    sig.as_bytes().to_vec()
                 }
-                let secret_key = k256::SecretKey::try_from(ec)?;
-                let signing_key = k256::ecdsa::SigningKey::from(secret_key);
-                let sig: k256::ecdsa::Signature = signing_key
-                    .try_sign_digest(Digest::chain(<PassthroughDigest as Digest>::new(), &hash))?;
-                sig.as_bytes().to_vec()
+                _ => {
+                    return Err(Error::UnsupportedAlgorithm);
+                }
             }
-            _ => {
-                return Err(Error::UnsupportedAlgorithm);
-            }
-        },
+        }
         _ => return Err(Error::KeyTypeNotImplemented),
     };
     clear_on_drop::clear_stack(1);
