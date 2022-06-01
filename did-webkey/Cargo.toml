@@ -28,7 +28,7 @@ serde_json = "1.0.75"
 serde = { version = "1.0.134", features = ["derive"] }
 sshkeys = "0.3.1"
 
-sequoia-openpgp = { version = "1.7.0", default-features = false, features = [
+sequoia-openpgp = { version = "1.9.0", default-features = false, features = [
     "compression-deflate",
     "crypto-rust",
     "allow-experimental-crypto",
