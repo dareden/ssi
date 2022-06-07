@@ -7,8 +7,8 @@ license = "Apache-2.0"
 keywords = ["ssi", "did"]
 categories = ["web-programming::http-client"]
 description = "did:webkey DID method, using the ssi crate"
-repository = "https://github.com/spruceid/ssi/"
-homepage = "https://github.com/spruceid/ssi/tree/main/did-webkey/"
+repository = "https://github.com/dareden/ssi/"
+homepage = "https://github.com/dareden/ssi/tree/main/did-webkey/"
 documentation = "https://docs.rs/did-webkey/"
 
 [features]

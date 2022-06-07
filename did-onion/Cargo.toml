@@ -6,8 +6,8 @@ edition = "2018"
 license = "Apache-2.0"
 keywords = ["ssi", "did", "tor", "onion"]
 description = "did:onion DID method, using the ssi crate"
-repository = "https://github.com/spruceid/ssi/"
-homepage = "https://github.com/spruceid/ssi/tree/main/did-onion/"
+repository = "https://github.com/dareden/ssi/"
+homepage = "https://github.com/dareden/ssi/tree/main/did-onion/"
 documentation = "https://docs.rs/did-onion/"
 
 [features]

@@ -7,8 +7,8 @@ license = "Apache-2.0"
 keywords = ["ssi", "did"]
 categories = ["web-programming::http-client"]
 description = "did:ion DID method implementation, using the ssi crate and ION/Sidetree REST API"
-repository = "https://github.com/spruceid/ssi/"
-homepage = "https://github.com/spruceid/ssi/tree/main/did-ion/"
+repository = "https://github.com/dareden/ssi/"
+homepage = "https://github.com/dareden/ssi/tree/main/did-ion/"
 documentation = "https://docs.rs/did-ion/"
 
 [features]

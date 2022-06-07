@@ -5,7 +5,7 @@ authors = ["Spruce Systems, Inc."]
 edition = "2018"
 license = "Apache-2.0"
 description = "Core library for Verifiable Credentials and Decentralized Identifiers."
-repository = "https://github.com/spruceid/ssi/"
+repository = "https://github.com/dareden/ssi/"
 documentation = "https://docs.rs/ssi/"
 resolver = "2"
 
